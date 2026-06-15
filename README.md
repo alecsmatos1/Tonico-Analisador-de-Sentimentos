@@ -30,6 +30,23 @@ Depois acesse:
 http://localhost:8501
 ```
 
+## Modo da interface
+
+Por padrão, o app abre em modo público, sem o painel do apresentador:
+
+```powershell
+streamlit run app_feira.py
+```
+
+Para usar localmente na feira com o painel do apresentador, defina a variável `TONICO_APP_MODE` antes de iniciar:
+
+```powershell
+$env:TONICO_APP_MODE="feira"
+streamlit run app_feira.py
+```
+
+Valores aceitos para ativar o painel: `feira`, `presenter` ou `apresentador`.
+
 ## Deploy no Streamlit Community Cloud
 
 Configurar:
