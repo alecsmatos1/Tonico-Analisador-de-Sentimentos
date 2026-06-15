@@ -1,7 +1,8 @@
-"""app_feira.py — Demo interativa do Tonico para a Feira de Extensao."""
+"""app_feira.py — Demo interativa do Tonico para a Feira de Extensão."""
 from __future__ import annotations
 
 import html as _html
+import os
 import random
 import re
 from pathlib import Path
@@ -10,12 +11,15 @@ import streamlit as st
 
 from sentiment_analyzer import analyze_symbolic_sentiment
 
-# ── configuracao da pagina ──────────────────────────────────────────────────
+APP_MODE = os.getenv("TONICO_APP_MODE", "publico").strip().lower()
+SHOW_PRESENTER_PANEL = APP_MODE in {"feira", "presenter", "apresentador"}
+
+# ── configuração da página ──────────────────────────────────────────────────
 st.set_page_config(
     page_title="Tonico — Analisador de Sentimentos",
     page_icon="🤖",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="expanded" if SHOW_PRESENTER_PANEL else "collapsed",
 )
 
 # ── constantes ──────────────────────────────────────────────────────────────
@@ -34,30 +38,30 @@ EXAMPLES: dict[str, list[str]] = {
         "Achei muito ruim.",
         "O produto chegou no prazo.",
     ],
-    "Com negacao": [
-        "Nao gostei do filme.",
-        "Nao foi ruim.",
-        "Nunca vi atendimento tao bom.",
+    "Com negação": [
+        "Não gostei do filme.",
+        "Não foi ruim.",
+        "Nunca vi atendimento tão bom.",
     ],
     "Com contraste": [
-        "O comeco foi legal, mas o final foi pessimo.",
-        "A entrega atrasou, mas o produto e excelente.",
-        "O produto e bonito, so que nao funciona.",
+        "O começo foi legal, mas o final foi péssimo.",
+        "A entrega atrasou, mas o produto é excelente.",
+        "O produto é bonito, só que não funciona.",
     ],
-    "Casos dificeis": [
-        "Nossa, que otimo, meu celular quebrou de novo.",
+    "Casos difíceis": [
+        "Nossa, que ótimo, meu celular quebrou de novo.",
         "Amei esperar duas horas na fila.",
-        "Adorei ter que devolver o produto tres vezes.",
-        "Que servico incrivel, so chegou errado.",
-        "Perfeito! Ja e a terceira vez que o produto chega com defeito.",
+        "Adorei ter que devolver o produto três vezes.",
+        "Que serviço incrível, só chegou errado.",
+        "Perfeito! Já é a terceira vez que o produto chega com defeito.",
     ],
 }
 
 CHALLENGES: list[str] = [
     "Escreva uma frase positiva usando a palavra 'ruim'.",
-    "Use 'nao' para transformar um elogio em critica.",
-    "Escreva uma frase ironica: diga algo bom de um jeito que significa o contrario.",
-    "Use um emoji que contradiz o que voce escreveu. Ex: 'O produto quebrou em 2 dias 😍'",
+    "Use 'não' para transformar um elogio em crítica.",
+    "Escreva uma frase irônica: diga algo bom de um jeito que significa o contrário.",
+    "Use um emoji que contradiz o que você escreveu. Ex: 'O produto quebrou em 2 dias 😍'",
     "Comece sua frase de forma positiva e termine de forma negativa.",
     "Use 'mas' para virar o sentido no meio da frase.",
     "Elogie e critique ao mesmo tempo na mesma frase.",
@@ -87,10 +91,10 @@ SENTIMENT_ADJECTIVES: dict[str, str] = {
     "neutro": "neutra",
 }
 
-# ── tokens de categorias linguisticas ────────────────────────────────────────
+# ── tokens de categorias linguísticas ────────────────────────────────────────
 
-_NEGACAO_WORDS: frozenset[str] = frozenset({"nao", "nem", "nunca", "jamais", "tampouco"})
-_CONTRASTE_WORDS: frozenset[str] = frozenset({"mas", "porem", "contudo", "entretanto", "todavia"})
+_NEGACAO_WORDS: frozenset[str] = frozenset({"não", "nao", "nem", "nunca", "jamais", "tampouco"})
+_CONTRASTE_WORDS: frozenset[str] = frozenset({"mas", "porém", "porem", "contudo", "entretanto", "todavia"})
 _INTENSIF_WORDS: frozenset[str] = frozenset({"muito", "demais", "super", "bastante", "extremamente", "incrivelmente"})
 
 
@@ -109,14 +113,14 @@ def moderate_text(text: str) -> tuple[bool, str]:
         if re.search(r"\b" + re.escape(term) + r"\b", normalized):
             return (
                 False,
-                "Essa frase tem termos que o Tonico prefere nao analisar na feira. "
+                "Essa frase tem termos que o Tonico prefere não analisar na feira. "
                 "Tente outra frase.",
             )
     return True, ""
 
 
 def run_tonico_analysis(text: str) -> dict:
-    """Chama o analisador simbolico e retorna o resultado para a UI."""
+    """Chama o analisador simbólico e retorna o resultado para a UI."""
     return analyze_symbolic_sentiment(text)
 
 
@@ -131,7 +135,7 @@ def sentiment_asset(label: str) -> Path:
 
 
 def build_short_explanation(result: dict) -> str:
-    """Explicacao curta com pistas encontradas (para criancas)."""
+    """Explicação curta com pistas encontradas (para crianças)."""
     hits = result.get("rule_hits", [])
     pos = [h["excerpt"] for h in hits if h.get("polarity") == "positivo"]
     neg = [h["excerpt"] for h in hits if h.get("polarity") == "negativo"]
@@ -143,12 +147,12 @@ def build_short_explanation(result: dict) -> str:
         parts.append(f"Pistas negativas: **{', '.join(neg[:3])}**")
 
     if not parts:
-        return "O Tonico nao encontrou pistas claras. Provavelmente e um caso dificil!"
+        return "O Tonico não encontrou pistas claras. Provavelmente é um caso difícil!"
     return " | ".join(parts)
 
 
 def build_detailed_explanation(result: dict) -> str:
-    """Explicacao tecnica detalhada (para adolescentes e professores)."""
+    """Explicação técnica detalhada (para adolescentes e professores)."""
     hits = result.get("rule_hits", [])
     lines: list[str] = []
     for h in hits:
@@ -167,17 +171,17 @@ def build_detailed_explanation(result: dict) -> str:
 
 
 def has_mixed_evidence(result: dict) -> bool:
-    """Retorna True quando ha pistas positivas e negativas simultaneas."""
+    """Retorna True quando há pistas positivas e negativas simultâneas."""
     return result.get("positive_score", 0) > 0.5 and result.get("negative_score", 0) > 0.5
 
 
 def pick_random_challenge() -> str:
-    """Seleciona um desafio aleatorio da lista."""
+    """Seleciona um desafio aleatório da lista."""
     return random.choice(CHALLENGES)
 
 
 def avaliar_placar_desafio(result: dict) -> bool:
-    """Retorna True se o usuario conseguiu confundir o Tonico."""
+    """Retorna True se o usuário conseguiu confundir o Tonico."""
     return result.get("confidence", 1.0) < 0.5 or has_mixed_evidence(result)
 
 
@@ -187,14 +191,14 @@ def compare_phrases(text_a: str, text_b: str) -> tuple[dict, dict]:
 
 
 def _tokens(text: str) -> set[str]:
-    """Divide texto em tokens minusculos para checagem de palavras-chave."""
+    """Divide texto em tokens minúsculos para checagem de palavras-chave."""
     return set(re.split(r"\W+", text.lower()))
 
 
 def categorize_hits(result: dict) -> dict[str, list[str]]:
-    """Categoriza rule_hits por tipo: pos, neg, negacao, contraste, emoji, intensif.
+    """Categoriza rule_hits por tipo: pos, neg, negação, contraste, emoji, intensif.
 
-    Cada hit pode cair em apenas uma categoria (prioridade: emoji > negacao >
+    Cada hit pode cair em apenas uma categoria (prioridade: emoji > negação >
     contraste > intensif > pos/neg por polarity).
 
     Returns:
@@ -234,23 +238,23 @@ def categorize_hits(result: dict) -> dict[str, list[str]]:
 
 
 def build_explanation_cards(result: dict) -> list[str]:
-    """Retorna lista de cartoes explicativos baseados nas pistas encontradas.
+    """Retorna lista de cartões explicativos baseados nas pistas encontradas.
 
-    Cada cartao e uma string com uma dica educativa sobre o fenomeno linguistico
+    Cada cartão é uma string com uma dica educativa sobre o fenômeno linguístico
     detectado no texto analisado.
     """
     hits = result.get("rule_hits", [])
     confidence = result.get("confidence", 1.0)
     cards: list[str] = []
 
-    # verifica negacao
+    # verifica negação
     negacao_detectada = any(
         "negacao" in h.get("rule", "").lower()
         or bool(_tokens(h.get("excerpt", "")) & _NEGACAO_WORDS)
         for h in hits
     )
     if negacao_detectada:
-        cards.append("A palavra 'nao' pode inverter o sentido de uma frase.")
+        cards.append("A palavra 'não' pode inverter o sentido de uma frase.")
 
     # verifica contraste
     contraste_detectado = any(
@@ -264,11 +268,11 @@ def build_explanation_cards(result: dict) -> list[str]:
     # verifica emoji
     emoji_detectado = any("emoji" in h.get("rule", "").lower() for h in hits)
     if emoji_detectado:
-        cards.append("Emojis podem reforcar ou contradizer o texto.")
+        cards.append("Emojis podem reforçar ou contradizer o texto.")
 
-    # confianca baixa (ironia)
+    # confiança baixa (ironia)
     if confidence < 0.5:
-        cards.append("Ironia depende de contexto que nem sempre esta escrito.")
+        cards.append("Ironia depende de contexto que nem sempre está escrito.")
 
     return cards
 
@@ -318,7 +322,7 @@ def run_aprendiz_analysis(text: str) -> dict | None:
         return None
 
 
-# ── estado de sessao ────────────────────────────────────────────────────────
+# ── estado de sessão ────────────────────────────────────────────────────────
 
 def _init_session() -> None:
     defaults = {
@@ -368,7 +372,7 @@ def _render_result_block(result: dict) -> None:
                 margin-top:4px;">
                 <h2 style="color:{color};margin:0;font-size:2rem;">{label_str}</h2>
                 <p style="font-size:1.15rem;margin:6px 0 0 0;">
-                Essa frase e
+                Essa frase é
                 <b style="color:{color};">{SENTIMENT_ADJECTIVES.get(label, label)}</b>.</p>
             </div>""",
             unsafe_allow_html=True,
@@ -379,23 +383,23 @@ def _render_result_block(result: dict) -> None:
 
     if result.get("confidence", 1.0) < 0.4:
         st.info(
-            "🤔 Boa! Voce encontrou um caso dificil. "
+            "🤔 Boa! Você encontrou um caso difícil. "
             "Frases com ironia ou contexto escondido podem confundir analisadores de sentimento. "
             "Isso faz parte do aprendizado!"
         )
 
     if st.session_state.show_details:
-        with st.expander("🔬 Como o Tonico pensou (detalhes tecnicos)", expanded=True):
+        with st.expander("🔬 Como o Tonico pensou (detalhes técnicos)", expanded=True):
             st.markdown(build_detailed_explanation(result))
             st.caption(
                 "💡 A palavra **'mas'** costuma mudar o foco para a segunda parte da frase. "
-                "**'Nao'** pode inverter o sentido. "
-                "**Ironia** depende de contexto que nem sempre esta escrito."
+                "**'Não'** pode inverter o sentido. "
+                "**Ironia** depende de contexto que nem sempre está escrito."
             )
 
 
 def _render_clue_blocks(result: dict) -> None:
-    """Renderiza blocos visuais de pistas categorizadas com etapas didaticas."""
+    """Renderiza blocos visuais de pistas categorizadas com etapas didáticas."""
     cats = categorize_hits(result)
     cards = build_explanation_cards(result)
 
@@ -417,7 +421,7 @@ def _render_clue_blocks(result: dict) -> None:
         <b>🔍 Passo 2 — Tonico identificou as pistas</b><br>
         Cada pista recebe um peso: palavras positivas somam pontos, negativas subtraem.<br><br>
         <b>🎯 Passo 3 — Tonico decidiu o sentimento</b><br>
-        O placar final determina se a frase e positiva, negativa ou neutra.
+        O placar final determina se a frase é positiva, negativa ou neutra.
         </div>
         """,
         unsafe_allow_html=True,
@@ -443,12 +447,12 @@ def _render_clue_blocks(result: dict) -> None:
 
     _badge(cats["pos"],      "#27ae60", "✅", "Pistas positivas")
     _badge(cats["neg"],      "#e74c3c", "❌", "Pistas negativas")
-    _badge(cats["negacao"],  "#8e44ad", "🚫", "Negacoes")
+    _badge(cats["negacao"],  "#8e44ad", "🚫", "Negações")
     _badge(cats["contraste"],"#2980b9", "↔️", "Contrastes")
     _badge(cats["emoji"],    "#f39c12", "😀", "Emojis")
     _badge(cats["intensif"], "#16a085", "🔊", "Intensificadores")
 
-    # cartoes didaticos
+    # cartões didáticos
     if cards:
         st.markdown("#### 💡 Sabia disso?")
         for card in cards:
@@ -459,7 +463,7 @@ def _render_history() -> None:
     if not st.session_state.history:
         return
     st.markdown("---")
-    st.markdown("### 📜 Ultimas analises")
+    st.markdown("### 📜 Últimas análises")
     for item in reversed(st.session_state.history[-5:]):
         lbl = item.get("label", "neutro")
         color = SENTIMENT_COLORS.get(lbl, "#888888")
@@ -483,7 +487,7 @@ def _render_sidebar() -> None:
             st.image(str(robo), width=100)
 
         st.markdown("## 🎛️ Painel do Apresentador")
-        st.markdown(f"**Frases analisadas nessa sessao:** {st.session_state.phrase_count}")
+        st.markdown(f"**Frases analisadas nessa sessão:** {st.session_state.phrase_count}")
         counts = st.session_state.sentiment_counts
         total = sum(counts.values())
         if total > 0:
@@ -492,11 +496,11 @@ def _render_sidebar() -> None:
             neu_pct = 100 - pos_pct - neg_pct
             st.caption(f"😄 {pos_pct}% positivo | 😟 {neg_pct}% negativo | 😐 {neu_pct}% neutro")
 
-        if st.button("🗑️ Limpar historico", use_container_width=True):
+        if st.button("🗑️ Limpar histórico", use_container_width=True):
             st.session_state.history = []
             st.rerun()
 
-        if st.button("🔄 Resetar demonstracao", use_container_width=True):
+        if st.button("🔄 Resetar demonstração", use_container_width=True):
             st.session_state.history = []
             st.session_state.phrase_count = 0
             st.session_state.challenge_text = ""
@@ -508,9 +512,9 @@ def _render_sidebar() -> None:
             st.rerun()
 
         detail_lbl = (
-            "🔎 Ocultar detalhes tecnicos"
+            "🔎 Ocultar detalhes técnicos"
             if st.session_state.show_details
-            else "🔎 Mostrar detalhes tecnicos"
+            else "🔎 Mostrar detalhes técnicos"
         )
         if st.button(detail_lbl, use_container_width=True):
             st.session_state.show_details = not st.session_state.show_details
@@ -528,7 +532,7 @@ def _render_sidebar() -> None:
 
 
 def _run_analysis_and_store(user_input: str) -> dict | None:
-    """Executa moderacao + analise, atualiza historico e retorna resultado (ou None)."""
+    """Executa moderação + análise, atualiza histórico e retorna resultado (ou None)."""
     ok, msg = moderate_text(user_input)
     if not ok:
         st.warning(f"🚫 {msg}")
@@ -558,7 +562,8 @@ def _run_analysis_and_store(user_input: str) -> dict | None:
 
 def main() -> None:
     _init_session()
-    _render_sidebar()
+    if SHOW_PRESENTER_PANEL:
+        _render_sidebar()
 
     col_logo, col_titulo = st.columns([1, 5])
     with col_logo:
@@ -569,11 +574,11 @@ def main() -> None:
         st.markdown("# 🤖 Tonico — Analisador de Sentimentos")
 
     st.markdown(
-        "O **Tonico** le o que voce escreve, identifica pistas de significado "
-        "e decifra se o sentimento e **positivo**, **neutro** ou **negativo**."
+        "O **Tonico** lê o que você escreve, identifica pistas de significado "
+        "e decifra se o sentimento é **positivo**, **neutro** ou **negativo**."
     )
 
-    # aviso discreto — exibido uma vez por sessao
+    # aviso discreto — exibido uma vez por sessão
     if not st.session_state.disclaimer_shown:
         st.caption(
             "⚠️ Este sistema aprende por regras e pode errar "
@@ -598,7 +603,7 @@ def main() -> None:
             height=110,
             max_chars=500,
             label_visibility="collapsed",
-            placeholder="Ex: Adorei o produto, chegou rapido e funciona perfeitamente!",
+            placeholder="Ex: Adorei o produto, chegou rápido e funciona perfeitamente!",
             key="input_livre",
         )
         analyze_btn = st.button(
@@ -620,8 +625,8 @@ def main() -> None:
 
                     if not st.session_state.show_details:
                         st.caption(
-                            "💡 Ative **Mostrar detalhes tecnicos** no painel lateral "
-                            "para ver como o Tonico pensou passo a passo."
+                            "💡 Abra a aba **Como o Tonico pensou** para ver "
+                            "as pistas usadas na análise."
                         )
 
         _render_history()
@@ -667,8 +672,8 @@ def main() -> None:
                 st.info("Analise uma frase primeiro.")
             elif _load_tfidf_pipeline() is None:
                 st.info(
-                    "Modelo Aprendiz nao carregado. "
-                    "Execute scripts/export_tfidf_feira.py para habilitá-lo."
+                    "Modelo Aprendiz não carregado. "
+                    "O arquivo `models/feira/tfidf_pipeline.pkl` precisa estar disponível."
                 )
             else:
                 aprendiz = run_aprendiz_analysis(
@@ -676,8 +681,8 @@ def main() -> None:
                 )
                 if aprendiz is None:
                     st.info(
-                        "Modelo Aprendiz nao carregado. "
-                        "Execute scripts/export_tfidf_feira.py para habilitá-lo."
+                        "Modelo Aprendiz não carregado. "
+                        "O arquivo `models/feira/tfidf_pipeline.pkl` precisa estar disponível."
                     )
                 else:
                     tonico_label = last.get("label", "neutro")
@@ -737,7 +742,7 @@ def main() -> None:
                     "Frase B",
                     height=90,
                     max_chars=500,
-                    placeholder="Nao adorei o produto.",
+                    placeholder="Não adorei o produto.",
                     key="cmp_b",
                 )
             btn_comparar = st.button("Comparar", key="btn_comparar", type="primary")
@@ -779,21 +784,21 @@ def main() -> None:
                                 unsafe_allow_html=True,
                             )
                         diff = abs(result_a.get("score", 0) - result_b.get("score", 0))
-                        st.metric("Diferenca de escore", f"{diff:.2f}")
+                        st.metric("Diferença de escore", f"{diff:.2f}")
 
     # ── TAB 3: Desafio ────────────────────────────────────────────────────────
     with tab_desafio:
         st.markdown("### 🎯 Desafio: Enganar o Tonico")
         st.markdown(
-            "Use ironia, negacao ou contraste para ver se o Tonico se confunde. "
-            "Quando ele errar, voce ganhou!"
+            "Use ironia, negação ou contraste para ver se o Tonico se confunde. "
+            "Quando ele errar, você ganhou!"
         )
 
         col_desafio_btn, col_desafio_info = st.columns([1, 2])
         with col_desafio_btn:
             if st.button("🎲 Surpreenda o Tonico", use_container_width=True, key="btn_surpresa"):
                 import random as _random
-                st.session_state["input_desafio"] = _random.choice(EXAMPLES["Casos dificeis"])
+                st.session_state["input_desafio"] = _random.choice(EXAMPLES["Casos difíceis"])
                 st.session_state.challenge_text = "Será que o Tonico consegue detectar a ironia?"
                 st.rerun()
             if st.button("🗑️ Limpar desafio", use_container_width=True, key="btn_limpar_desafio"):
@@ -805,7 +810,7 @@ def main() -> None:
                 st.info(f"💡 **Desafio:** {st.session_state.challenge_text}")
 
         with st.expander("📋 Frases prontas para desafiar o Tonico", expanded=False):
-            for i, phrase in enumerate(EXAMPLES["Casos dificeis"]):
+            for i, phrase in enumerate(EXAMPLES["Casos difíceis"]):
                 if st.button(
                     f"↗ {phrase}",
                     key=f"desafio_phrase_{i}",
@@ -847,14 +852,14 @@ def main() -> None:
                     tentativas = st.session_state.desafio_tentativas
                     confusoes = st.session_state.desafio_confusoes
                     st.markdown(
-                        f"🏆 **Placar:** Voce confundiu o Tonico {confusoes} de {tentativas} tentativas"
+                        f"🏆 **Placar:** Você confundiu o Tonico {confusoes} de {tentativas} tentativas"
                     )
 
                     confidence = result.get("confidence", 1.0)
                     if confidence < 0.4:
                         st.success(
-                            "🎉 **Voce conseguiu!** O Tonico ficou confuso com essa frase. "
-                            "Boa! Voce encontrou um caso dificil. "
+                            "🎉 **Você conseguiu!** O Tonico ficou confuso com essa frase. "
+                            "Boa! Você encontrou um caso difícil. "
                             "Frases com ironia ou contexto escondido podem confundir "
                             "analisadores de sentimento. Isso faz parte do aprendizado!"
                         )
@@ -866,14 +871,14 @@ def main() -> None:
                     else:
                         st.info(
                             "🤖 **O Tonico acertou desta vez!** Tente usar ironia mais sutil, "
-                            "negacao dupla ou um emoji que contradiz o texto."
+                            "negação dupla ou um emoji que contradiz o texto."
                         )
 
                     _render_clue_blocks(result)
 
     st.markdown("---")
-    st.caption("🔒 As frases digitadas **nao sao salvas**. Esta e uma demonstracao educativa offline.")
-    st.caption("USP — Processamento de Linguagem Natural | Feira de Extensao")
+    st.caption("🔒 As frases digitadas **não são salvas**. Esta é uma demonstração educativa.")
+    st.caption("USP — Processamento de Linguagem Natural | Feira de Extensão")
 
 
 if __name__ == "__main__":

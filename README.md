@@ -1,6 +1,6 @@
 # Tonico - Analisador de Sentimentos
 
-Demo interativa em Streamlit para feira de extensao.
+Demo interativa em Streamlit para feira de extensão.
 
 O Tonico classifica frases em:
 
@@ -8,14 +8,14 @@ O Tonico classifica frases em:
 - neutro;
 - negativo.
 
-A aplicacao usa:
+A aplicação usa:
 
-- analisador simbolico local;
-- comparacao opcional com TF-IDF + modelo linear salvo em `models/feira/tfidf_pipeline.pkl`;
+- analisador simbólico local;
+- comparação opcional com TF-IDF + modelo linear salvo em `models/feira/tfidf_pipeline.pkl`;
 - assets locais em `assets/images/`;
 - filtro simples para termos inadequados no contexto da feira.
 
-Este repositorio e uma versao enxuta de deploy. Ele nao inclui o pipeline de treino, datasets ou relatorios academicos do projeto original.
+Este repositório é uma versão enxuta de deploy. Ele não inclui o pipeline de treino, datasets ou relatórios acadêmicos do projeto original.
 
 ## Rodar localmente
 
@@ -40,13 +40,13 @@ Configurar:
 
 ## Privacidade
 
-As frases digitadas nao sao salvas por padrao.
+As frases digitadas não são salvas por padrão.
 
-## O que nao esta neste repositorio
+## O que não está neste repositório
 
 - datasets brutos;
 - arquivos `.env`;
 - chaves de API;
 - caches;
 - modelos grandes;
-- saidas de experimentos.
+- saídas de experimentos.
